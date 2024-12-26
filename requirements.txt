@@ -1,0 +1,8 @@
+apache-airflow 
+beautifulsoup4 
+requests 
+snowflake-connector-python 
+scikit-learn 
+pandas 
+fastapi 
+uvicorn 

@@ -1,0 +1,5 @@
+# Exclure le fichier de configuration Snowflake
+config/snowflake_config.json
+
+# Exclure le dossier de l'environnement virtuel
+venv/
