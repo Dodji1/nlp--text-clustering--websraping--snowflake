@@ -1,0 +1,6 @@
+import requests
+from bs4 import BeautifulSoup
+url = "https://books.toscrape.com/"
+page = requests.get(url)
+soup = BeautifulSoup(page.text, features="lxml")
+titles = soup.find('h2')
