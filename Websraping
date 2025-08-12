@@ -1,0 +1,51 @@
+import json
+import requests
+from bs4 import BeautifulSoup
+import os
+
+# Charger la configuration
+config_path = os.path.join(os.path.dirname(__file__), "..", "config", "scraping_config.json")
+with open(config_path, "r", encoding="utf-8") as f:
+    config = json.load(f)
+
+base_url = config["base_url"]
+book_url = config["book_url"]
+
+full_url = base_url + book_url
+
+# Faire la requête HTTP
+response = requests.get(full_url)
+if response.status_code != 200:
+    raise Exception(f"Erreur lors de la requête : {response.status_code}")
+
+# Parser le HTML avec BeautifulSoup
+soup = BeautifulSoup(response.text, "html.parser")
+
+# Extraire le titre
+title = soup.find("h1").text.strip()
+
+# Extraire la description
+desc_tag = soup.find("meta", attrs={"name": "description"})
+if desc_tag:
+    description = desc_tag.get("content").strip()
+else:
+    # Si meta description n'existe pas, chercher dans <article>
+    product_page = soup.find("article", class_="product_page")
+    if product_page:
+        description = product_page.find_all("p")[0].text.strip()
+    else:
+        description = "Description non trouvée"
+
+# Afficher le résultat
+print(f"Titre : {title}")
+print(f"Description : {description}")
+
+# Sauvegarder dans un JSON
+output_dir = os.path.join(os.path.dirname(__file__), "..", "data")
+os.makedirs(output_dir, exist_ok=True)
+output_file = os.path.join(output_dir, "scraped_book.json")
+
+with open(output_file, "w", encoding="utf-8") as f:
+    json.dump({"title": title, "description": description}, f, indent=4, ensure_ascii=False)
+
+print(f"✅ Données sauvegardées dans {output_file}")
