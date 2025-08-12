@@ -1,1 +1,32 @@
-hrtlzfknnfnkz
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+
+# Définir l'URL de base
+base_url = "https://books.toscrape.com/"
+
+# Envoyer la requête à la page d'accueil
+response = requests.get(base_url)
+soup = BeautifulSoup(response.text, "html.parser")
+
+# Parcourir tous les livres sur la page
+for article in soup.find_all("article", class_="product_pod"):
+    # Récupérer le titre et le lien vers la page du livre
+    titre = article.h3.a["title"]
+    livre_relative_url = article.h3.a["href"]
+    livre_url = urljoin(base_url, livre_relative_url)
+
+    # Récupérer le prix depuis la page d'accueil
+    prix = article.find("p", class_="price_color").text.strip()
+
+    # Aller sur la page du livre pour récupérer la description
+    livre_resp = requests.get(livre_url)
+    livre_soup = BeautifulSoup(livre_resp.text, "html.parser")
+
+    desc_tag = livre_soup.find("meta", attrs={"name": "description"})
+    description = desc_tag["content"].strip() if desc_tag else "Pas de description"
+
+    # Afficher les informations
+    print(f"Titre : {titre}")
+    print(f"Prix : {prix}")
+    print(f"Description : {description}\n{'-'*40}\n")
