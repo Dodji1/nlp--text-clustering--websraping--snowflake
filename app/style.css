@@ -1,0 +1,318 @@
+/*
+========================================
+BIBLIO IA 2025 - STYLES PERSONNALISÉS
+========================================
+*/
+
+/* Import de polices Google Fonts pour un rendu moderne */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Variables CSS pour une maintenance facile des couleurs */
+:root {
+    --ai-blue-primary: #1e40af;
+    --ai-blue-light: #3b82f6;
+    --ai-blue-dark: #1e3a8a;
+    --ai-purple: #8b5cf6;
+    --gradient-primary: linear-gradient(135deg, #1e40af, #8b5cf6);
+    --shadow-glow: 0 0 50px rgba(59, 130, 246, 0.3);
+}
+
+/* Reset et configuration globale */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    background-color: #f0f8ff;
+    background-image: 
+        linear-gradient(45deg, rgba(59, 130, 246, 0.1) 25%, transparent 25%, transparent 75%, rgba(59, 130, 246, 0.1) 75%, rgba(59, 130, 246, 0.1)),
+        linear-gradient(45deg, rgba(59, 130, 246, 0.1) 25%, transparent 25%, transparent 75%, rgba(59, 130, 246, 0.1) 75%, rgba(59, 130, 246, 0.1));
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
+}
+
+/*
+========================================
+ANIMATION DU CODE EN ARRIÈRE-PLAN
+========================================
+*/
+
+#code-animation {
+    z-index: 0;
+    user-select: none;
+}
+
+.code-line {
+    position: absolute;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: rgba(59, 130, 246, 0.3);
+    white-space: nowrap;
+    animation: slideCode 20s linear infinite;
+}
+
+@keyframes slideCode {
+    0% { transform: translateX(100vw); }
+    100% { transform: translateX(-100%); }
+}
+
+/*
+========================================
+ANIMATIONS DU TITRE PRINCIPAL
+========================================
+*/
+
+.welcome-button {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 1rem;
+    background: linear-gradient(to top, #1e40af, #3b82f6);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.welcome-button:hover {
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+.welcome-button h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: white;
+    text-align: center;
+    margin: 0;
+}
+
+/* Désactiver l'animation machine à écrire sur mobile */
+@media (max-width: 768px) {
+    #welcome-text {
+        animation: none !important;
+        border-right: none !important;
+        white-space: normal;
+        font-size: 2rem;
+    }
+}
+
+
+
+
+/* ... (le reste du CSS existant reste inchangé) ... */
+
+/*
+========================================
+SUGGESTIONS DE CATÉGORIES
+========================================
+*/
+
+#title-suggestions, #description-suggestions {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.suggestion-item {
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.suggestion-item:hover {
+    background-color: rgba(59, 130, 246, 0.2);
+}
+
+/*
+========================================
+BOUTON DE CORRECTION
+========================================
+*/
+
+#correct-btn {
+    display: block;
+}
+
+#correct-btn:hover {
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-1px);
+}
+
+/* ... (le reste du CSS existant reste inchangé) ... */
+
+/*
+========================================
+EFFETS VISUELS AVANCÉS
+========================================
+*/
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+}
+
+button:hover {
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+}
+
+/*
+========================================
+ANIMATIONS D'INTERACTION
+========================================
+*/
+
+@keyframes slideInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#result-section {
+    animation: slideInUp 0.5s ease-out forwards;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+    50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.8); }
+}
+
+textarea:focus, button:focus {
+    animation: pulse-glow 2s infinite;
+    outline: none;
+}
+
+/*
+========================================
+RESPONSIVE DESIGN
+========================================
+*/
+
+@media (max-width: 768px) {
+    .welcome-button h1 { font-size: 1.25rem; }
+    .code-line { font-size: 12px; }
+    main { padding: 1rem; }
+}
+
+@media (max-width: 480px) {
+    .welcome-button h1 { font-size: 1rem; }
+    .glass-card { padding: 1rem; }
+    textarea { height: 120px; }
+}
+
+/*
+========================================
+ACCESSIBILITÉ
+========================================
+*/
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    #code-animation { display: none; }
+}
+
+@media (prefers-contrast: high) {
+    :root {
+        --ai-blue-primary: #0066cc;
+        --ai-blue-light: #0080ff;
+    }
+    .text-blue-200 { color: #ffffff !important; }
+}
+
+/*
+========================================
+UTILITAIRES SUPPLÉMENTAIRES
+========================================
+*/
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.loading-dots {
+    display: inline-block;
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+
+.loading-dots div {
+    position: absolute;
+    top: 33px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #3b82f6;
+    animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+
+.loading-dots div:nth-child(1) { left: 8px; animation: loading1 0.6s infinite; }
+.loading-dots div:nth-child(2) { left: 8px; animation: loading2 0.6s infinite; }
+.loading-dots div:nth-child(3) { left: 32px; animation: loading2 0.6s infinite; }
+.loading-dots div:nth-child(4) { left: 56px; animation: loading3 0.6s infinite; }
+
+@keyframes loading1 { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+@keyframes loading3 { 0% { transform: scale(1); } 100% { transform: scale(0); } }
+@keyframes loading2 { 0% { transform: translate(0, 0); } 100% { transform: translate(24px, 0); } }
+
+/* Ajout pour l'image proportionnelle */
+.image-right {
+    max-height: calc(100% - 2rem);
+    object-fit: contain;
+}
+
+
+
+/*
+========================================
+DISPOSITION GRID ET DÉFILEMENT DE L'IMAGE
+========================================
+*/
+
+main .max-w-7xl {
+    width: 100%;
+}
+
+.grid-cols-1.md\:grid-cols-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Deux colonnes égales sur desktop */
+    gap: 8px; /* Espacement entre formulaire et image */
+    align-items: start; /* Aligne le haut des colonnes */
+}
+
+@media (max-width: 767px) {
+    .grid-cols-1.md\:grid-cols-2 {
+        grid-template-columns: 1fr; /* Une seule colonne sur mobile */
+    }
+    .w-full.flex.justify-center.items-start {
+        margin-top: 1rem; /* Espacement sous le formulaire sur mobile */
+    }
+    img.float-right {
+        max-height: 300px; /* Hauteur maximale sur mobile */
+    }
+}
+
+img.float-right {
+    position: sticky; /* Suit le défilement */
+    top: 20px; /* Décalage depuis le haut de la fenêtre */
+    max-width: 100%; /* Respecte la largeur du conteneur */
+    object-fit: contain; /* Garde les proportions */
+    align-self: flex-start; /* Aligne avec le haut du conteneur */
+    float: none; /* Supprime float pour utiliser Grid */
+}
