@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Biblio IA 2025 - Plateforme de classification intelligente de livres">
+    <meta name="description" content="BooksClass IA 2025 - Suggestions de livres par catégorie">
     
     <!-- Title de la page -->
-    <title>BooksClass IA 2025 - Classification Intelligente de Livres</title>
+    <title>BooksClass IA 2025 - Suggestions de Livres</title>
     
     <!-- Lien vers Tailwind CSS depuis CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -40,14 +40,13 @@
     <!-- Contenu principal -->
     <div class="relative z-10 min-h-screen flex flex-col">
         
-        <!-- HEADER - En-tête avec les logos -->
         <!-- HEADER - En-tête avec les logos et navigation -->
-<header class="w-full py-4 px-4 md:px-8 bg-black bg-opacity-20 backdrop-blur-sm">
+        <header class="w-full py-4 px-4 md:px-8 bg-black bg-opacity-20 backdrop-blur-sm">
     <div class="max-w-7xl mx-auto flex justify-between items-center">
         <!-- Logo gauche -->
         <div class="flex items-center space-x-2">
             <img src="img/logo-BE.png" alt="logo-BE" class="w-10 h-10 md:w-12 md:h-12 object-contain">
-            <span class="hidden md:block text-xl font-semibold">BooksClass</span>
+            <span class="hidden md:block text-xl font-semibold"></span>
         </div>
         
         <!-- Navigation -->
@@ -58,84 +57,66 @@
         
         <!-- Logo droite -->
         <div class="flex items-center space-x-2">
-            <span class="hidden md:block text-xl font-semibold">EEIA 2025</span>
-            <img src="img/FvLs.png" alt="logo-BE" class="w-10 h-20 md:w-12 md:h-12 object-contain">
+            <span class="hidden md:block text-xl font-semibold"></span>
+            <img src="img/FvLs.png" alt="logo-BE" class="w-10 h-35 md:w-12 md:h-12 object-contain">
         </div>
     </div>
 </header>
+        
         <!-- BODY - Corps principal -->
-       <!-- BODY - Corps principal -->
 <main class="flex-grow px-4 py-8">
     <div class="max-w-7xl mx-auto">
-        <!-- Titre principal avec animation (inchangé) -->
+        <!-- Titre principal -->
         <div class="text-center mb-12">
             <div class="inline-block px-8 py-4 rounded-xl bg-gradient-to-t from-blue-900 to-blue-400 shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <h1 class="text-xl md:text-2xl font-semibold text-white text-center">
-                    Bienvenue sur BooksClass IA 2025
+                    Suggestions de Livres
                 </h1>
             </div>
             <div class="w-24 h-1 bg-gradient-to-r from-blue-400 to-purple-500 mx-auto rounded-full mt-4"></div>
         </div>
 
         <!-- Conteneur principal avec Grid pour formulaire et image -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start place-items-center">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
             <!-- Contenu principal (formulaire à gauche) -->
             <div class="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl p-6 md:p-8 shadow-2xl border border-white border-opacity-20">
-                <!-- Label pour le titre -->
-                <label for="book-title" class="block text-lg md:text-xl font-semibold mb-4 text-blue-100">
-                    Titre du livre à classer :
-                </label>
-                
-                <!-- Zone de saisie pour le titre -->
-                <textarea 
-                    id="book-title" 
-                    name="book-title"
-                    placeholder="Saisissez ici le titre de votre livre..."
-                    class="w-full h-20 p-4 rounded-xl bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none transition-all duration-300 mb-6"
-                    aria-label="Titre du livre à classifier"
-                    required
-                ></textarea>
-                
                 <!-- Label pour la description -->
-                <label for="book-description" class="block text-lg md:text-xl font-semibold mb-4 text-blue-100">
-                    Résumé du livre à classer :
+                <label for="book-description-suggest" class="block text-lg md:text-xl font-semibold mb-4 text-blue-100">
+                    Description du livre à analyser :
                 </label>
                 
                 <!-- Zone de saisie pour la description -->
                 <textarea 
-                    id="book-description" 
-                    name="book-description"
-                    placeholder="Saisissez ici le résumé de votre livre..."
+                    id="book-description-suggest" 
+                    name="book-description-suggest"
+                    placeholder="Saisissez ici la description de votre livre..."
                     class="w-full h-32 md:h-40 p-4 rounded-xl bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none transition-all duration-300"
-                    aria-label="Description du livre à classifier"
+                    aria-label="Description pour suggérer des livres"
                     required
                 ></textarea>
                 
-                <!-- Suggestions pour la description -->
-                <div id="description-suggestions" class="mb-6 text-blue-200 text-sm hidden"></div>
-                
-                <!-- Bouton de prédiction -->
+                <!-- Bouton de suggestion -->
                 <button 
-                    id="predict-btn" 
+                    id="suggest-btn" 
                     type="button"
                     class="w-full mt-6 py-4 px-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-xl font-semibold text-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-400 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-label="Prédire la catégorie du livre"
+                    aria-label="Suggérer des livres"
                 >
-                    <span id="btn-text">🔮 Prédire la catégorie</span>
-                    <span id="btn-loading" class="hidden">
+                    <span id="suggest-text">🔍 Suggérer des livres</span>
+                    <span id="suggest-loading" class="hidden">
                         <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Classification en cours...
+                        Recherche en cours...
                     </span>
                 </button>
                 
-                <!-- Zone de résultat -->
-                <div id="result-section" class="mt-8 hidden">
-                    <h3 class="text-xl font-semibold mb-3 text-blue-100">Résultat :</h3>
-                    <div id="result-content" class="p-4 bg-green-500 bg-opacity-20 border border-green-400 border-opacity-30 rounded-xl">
-                        <!-- Le résultat sera affiché ici par JavaScript -->
+                <!-- Section du catalogue visuel (en bas du formulaire) -->
+                <div id="suggestion-section" class="mt-8 hidden">
+                    <h3 class="text-xl font-semibold mb-3 text-blue-100">Livres Suggerés :</h3>
+                    <div id="suggestion-catalog" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <!-- Les livres seront insérés ici par JavaScript -->
                     </div>
                 </div>
             </div>
@@ -144,18 +125,14 @@
             <div class="w-full flex justify-center items-start">
                 <img 
                     src="img/biblio.jpg" 
-                    alt="Bienvenue sur Biblio IA 2025"
+                    alt="Suggestions de Livres - BooksClass IA 2025"
                     class="max-w-full h-auto rounded-xl shadow-2xl float-right"
                     style="max-height: calc(100% - 2rem); position: sticky; top: 20px;"
                 >
             </div>
         </div>
     </div>
-
-
-
 </main>
-        
         <!-- FOOTER - Pied de page -->
         <footer class="w-full py-6 px-4 bg-black bg-opacity-30 backdrop-blur-sm border-t border-white border-opacity-10">
             <div class="max-w-7xl mx-auto text-center">
@@ -175,6 +152,5 @@
     
     <!-- Lien vers notre fichier JavaScript -->
     <script src="script.js"></script>
-    
 </body>
 </html>
