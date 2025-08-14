@@ -316,3 +316,38 @@ img.float-right {
     align-self: flex-start; /* Aligne avec le haut du conteneur */
     float: none; /* Supprime float pour utiliser Grid */
 }
+
+
+/*
+========================================
+CATALOGUE VISUEL DES LIVRES (ÉTAGÈRES)
+========================================
+*/
+
+.book-shelf-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.book-shelf-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+.book-shelf-item img {
+    width: 100%;
+    height: 200px; /* Hauteur fixe pour simuler une étagère */
+    object-fit: cover;
+    border-radius: 0.5rem;
+}
+
+#suggestion-catalog {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}

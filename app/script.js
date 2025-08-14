@@ -10,7 +10,7 @@
  * @type {HTMLElement}
  */
 let bookTitleInput, bookDescriptionInput, predictBtn, resultSection, resultContent, btnText, btnLoading;
-let bookDescriptionSuggest, suggestBtn, suggestionSection, suggestionContent, suggestText, suggestLoading;
+let bookDescriptionSuggest, suggestBtn, suggestionSection, suggestionCatalog, suggestText, suggestLoading;
 let titleSuggestions, descriptionSuggestions, correctionSection, categorySelect, submitCorrection, confirmationText;
 
 /**
@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 BooksClass IA 2025 - Application initialisée à', new Date().toLocaleString());
     
     initializeDOMElements();
-    startCodeAnimation();
     setupEventListeners();
     console.log('📚 Éléments DOM initialisés');
 });
@@ -48,22 +47,17 @@ function initializeDOMElements() {
     bookDescriptionSuggest = document.getElementById('book-description-suggest');
     suggestBtn = document.getElementById('suggest-btn');
     suggestionSection = document.getElementById('suggestion-section');
-    suggestionContent = document.getElementById('suggestion-content');
+    suggestionCatalog = document.getElementById('suggestion-catalog');
     suggestText = document.getElementById('suggest-text');
     suggestLoading = document.getElementById('suggest-loading');
 
-    if (!predictBtn && !suggestBtn) console.error('❌ Aucun bouton de prédiction ou suggestion trouvé');
-    if ((predictBtn && !resultSection) || (suggestBtn && !suggestionSection)) console.warn('⚠️ Section de résultat manquante');
-}
-
-/**
- * Démarre l'animation de code défilant.
- */
-function startCodeAnimation() {
-    const codeAnimationContainer = document.getElementById('code-animation');
-    if (!codeAnimationContainer) return;
-    setInterval(() => createCodeLine(codeAnimationContainer), 2000);
-    for (let i = 0; i < 3; i++) setTimeout(() => createCodeLine(codeAnimationContainer), i * 500);
+    if (!predictBtn && !suggestBtn) {
+        console.error('❌ Aucun bouton de prédiction ou suggestion trouvé');
+        return;
+    }
+    if ((predictBtn && !resultSection) || (suggestBtn && !suggestionSection)) {
+        console.warn('⚠️ Section de résultat manquante');
+    }
 }
 
 /**
@@ -122,41 +116,59 @@ async function handlePrediction() {
 
     try {
         setLoadingState(true, 'predict');
-        hideResult();
+        hideResult(); // Appel de la fonction ajoutée
         const { category, confidenceScore } = await classifyBook(title, description);
         showResult(category, title, description, confidenceScore);
         askConfirmation(category);
     } catch (error) {
         console.error('❌ Erreur:', error);
-        showError('Une erreur est survenue.');
+        showError(`Une erreur est survenue: ${error.message}`);
     } finally {
         setLoadingState(false, 'predict');
     }
 }
 
 /**
- * Simule la classification d'un livre.
+ * Masque la section des résultats de prédiction.
+ */
+function hideResult() {
+    if (resultSection) {
+        resultSection.classList.add('hidden');
+    }
+}
+
+/**
+ * Appelle l'API FastAPI pour classifier le livre.
  * @param {string} title - Le titre.
  * @param {string} description - La description.
  * @returns {Object} Objet contenant la catégorie et le score de confiance.
  */
 async function classifyBook(title, description) {
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Simule un délai
-    const text = (title + ' ' + description).toLowerCase();
-    const keywords = {
-        'Science-Fiction': ['espace', 'futur', 'robot', 'technologie', 'alien'],
-        'Romance': ['amour', 'cœur', 'passion', 'relation'],
-        'Thriller': ['mystère', 'enquête', 'meurtre', 'suspense'],
-        'Fantasy': ['magie', 'dragon', 'épée', 'royaume'],
-        'Histoire': ['guerre', 'siècle', 'époque', 'historique'],
-    };
-    let maxScore = 0, bestCategory = 'Littérature Générale';
-    for (const [category, words] of Object.entries(keywords)) {
-        const score = words.filter(word => text.includes(word)).length;
-        if (score > maxScore) { maxScore = score; bestCategory = category; }
+    const text = `${title} ${description}`.trim();
+
+    try {
+        const response = await fetch('http://192.168.6.246:8000/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Erreur API /predict: ${response.status} - ${errorText}`);
+        }
+
+        const result = await response.json();
+        return {
+            category: result.cluster,
+            confidenceScore: result.confidenceScore
+        };
+    } catch (error) {
+        console.error('Erreur réseau ou API:', error);
+        throw new Error('Échec de la connexion à l\'API. Vérifiez votre réseau ou l\'URL.');
     }
-    const confidenceScore = maxScore > 2 ? 0.9 : maxScore > 0 ? 0.6 : 0.3;
-    return { category: bestCategory, confidenceScore };
 }
 
 /**
@@ -199,9 +211,11 @@ function showResult(category, title, description, confidenceScore) {
     resultContent.innerHTML = `
         <div class="flex items-center space-x-3 mb-3">
             <span class="text-3xl">${emoji}</span>
+            <div>
+                <h4 class="text-xl font-bold text-green-100">Catégorie : <span id="result-category">${category}</span></h4>
+            </div>
         </div>
         <div class="mt-4 p-3 bg-black bg-opacity-20 rounded-lg">
-            <p class="text-green-100 text-sm"><strong>Notation :</strong> ${notation}</p>
             <p class="text-green-200 text-xs mt-1">Analyse sur ${description.length} caractères</p>
         </div>
     `;
@@ -228,45 +242,46 @@ async function handleSuggestion() {
         showSuggestions(category, suggestedBooks, description);
     } catch (error) {
         console.error('❌ Erreur:', error);
-        showError('Une erreur est survenue.');
+        showError(`Une erreur est survenue: ${error.message}`);
     } finally {
         setLoadingState(false, 'suggest');
     }
 }
 
 /**
- * Simule la suggestion de livres basée sur la catégorie.
- * @param {string} description - La description.
- * @returns {Object} Objet contenant la catégorie et la liste des livres suggérés.
+ * Appelle l'API FastAPI pour suggérer des livres.
+ * @param {string} description - La description du livre.
+ * @returns {Object} Objet contenant la catégorie et les livres suggérés.
  */
 async function suggestBooks(description) {
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Simule un délai
-    const text = description.toLowerCase();
-    const keywords = {
-        'Science-Fiction': ['espace', 'futur', 'robot', 'technologie', 'alien'],
-        'Romance': ['amour', 'cœur', 'passion', 'relation'],
-        'Thriller': ['mystère', 'enquête', 'meurtre', 'suspense'],
-        'Fantasy': ['magie', 'dragon', 'épée', 'royaume'],
-        'Histoire': ['guerre', 'siècle', 'époque', 'historique'],
-    };
-    let bestCategory = 'Littérature Générale';
-    let maxScore = 0;
-    for (const [category, words] of Object.entries(keywords)) {
-        const score = words.filter(word => text.includes(word)).length;
-        if (score > maxScore) { maxScore = score; bestCategory = category; }
-    }
+    const text = description.trim();
 
-    // Liste simulée de livres par catégorie
-    const bookDatabase = {
-        'Science-Fiction': ['Dune', 'Fondation', '2001: L\'Odyssée de l\'espace'],
-        'Romance': ['Orgueil et Préjugés', 'Le Journal de Bridget Jones', 'Nuits Blanches'],
-        'Thriller': ['Le Silence des Agneaux', 'Millénium', 'Gone Girl'],
-        'Fantasy': ['Le Seigneur des Anneaux', 'Harry Potter', 'Le Trône de Fer'],
-        'Histoire': ['Sapiens', 'Guerre et Paix', 'L\'Histoire de France'],
-        'Littérature Générale': ['Cent Ans de Solitude', 'Les Misérables', 'L\'Étranger']
-    };
-    const suggestedBooks = bookDatabase[bestCategory] || bookDatabase['Littérature Générale'];
-    return { category: bestCategory, suggestedBooks };
+    try {
+        const response = await fetch('http://192.168.6.246:8000/suggest', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Erreur API /suggest: ${response.status} - ${errorText}`);
+        }
+
+        const result = await response.json();
+        if (!result.category || !result.suggestedBooks) {
+            throw new Error('Réponse API invalide : missing category or suggestedBooks');
+        }
+        return {
+            category: result.category,
+            suggestedBooks: result.suggestedBooks
+        };
+    } catch (error) {
+        console.error('Erreur réseau ou API:', error);
+        throw new Error('Échec de la connexion à l\'API. Vérifiez votre réseau ou l\'URL.');
+    }
 }
 
 /**
@@ -284,7 +299,6 @@ function showSuggestions(category, books, description) {
     const emoji = categoryEmojis[category] || '📚';
     const limitedBooks = books.slice(0, 3); // Limite à 3 livres
 
-    // Base de données simulée avec images et URLs (à remplacer par vos données)
     const bookDatabase = {
         'Science-Fiction': [
             { title: 'Dune', image: 'https://via.placeholder.com/150', url: 'https://example.com/dune' },
@@ -328,7 +342,6 @@ function showSuggestions(category, books, description) {
             <span class="text-3xl">${emoji}</span>
             <div>
                 <h4 class="text-xl font-bold text-green-100">Catégorie : ${category}</h4>
-                <p class="text-green-200 text-sm">${description}</p>
             </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -345,39 +358,13 @@ function showSuggestions(category, books, description) {
     console.log('✅ Catalogue affiché');
 }
 
-// Assurez-vous que suggestionCatalog est défini dans initializeDOMElements
-function initializeDOMElements() {
-    // Page de prédiction (index.html)
-    bookTitleInput = document.getElementById('book-title');
-    bookDescriptionInput = document.getElementById('book-description');
-    predictBtn = document.getElementById('predict-btn');
-    resultSection = document.getElementById('result-section');
-    resultContent = document.getElementById('result-content');
-    btnText = document.getElementById('btn-text');
-    btnLoading = document.getElementById('btn-loading');
-    titleSuggestions = document.getElementById('title-suggestions');
-    descriptionSuggestions = document.getElementById('description-suggestions');
-    correctionSection = document.getElementById('correction-section');
-    categorySelect = document.getElementById('category-select');
-    submitCorrection = document.getElementById('submit-correction');
-    confirmationText = document.getElementById('confirmation-text');
-
-    // Page de suggestion (suggest-books.html)
-    bookDescriptionSuggest = document.getElementById('book-description-suggest');
-    suggestBtn = document.getElementById('suggest-btn');
-    suggestionSection = document.getElementById('suggestion-section');
-    suggestionCatalog = document.getElementById('suggestion-catalog'); // Remplace suggestionContent
-    suggestText = document.getElementById('suggest-text');
-    suggestLoading = document.getElementById('suggest-loading');
-
-    if (!predictBtn && !suggestBtn) console.error('❌ Aucun bouton de prédiction ou suggestion trouvé');
-    if ((predictBtn && !resultSection) || (suggestBtn && !suggestionSection)) console.warn('⚠️ Section de résultat manquante');
-}
 /**
  * Masque la section des suggestions.
  */
 function hideSuggestion() {
-    if (suggestionSection) suggestionSection.classList.add('hidden');
+    if (suggestionSection) {
+        suggestionSection.classList.add('hidden');
+    }
 }
 
 /**
@@ -385,7 +372,7 @@ function hideSuggestion() {
  * @param {string} message - Le message d'erreur.
  */
 function showError(message) {
-    const content = predictBtn ? resultContent : suggestionContent;
+    const content = predictBtn ? resultContent : suggestionCatalog;
     const section = predictBtn ? resultSection : suggestionSection;
     if (!section || !content) return;
     content.innerHTML = `<div class="flex items-center space-x-3"><span class="text-3xl">⚠️</span><div><h4 class="text-xl font-bold text-red-100">Erreur</h4><p class="text-red-200">${message}</p></div></div>`;
