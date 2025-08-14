@@ -1,0 +1,51 @@
+import string
+import nltk
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from nltk.corpus import stopwords
+df = pd.read_csv("books_dataframe_cleaned.csv")
+df.head()
+df.info()
+def nettoyer_df(df):
+    if df.isnull().values.any():
+        df = df.dropna()
+    return df
+df=nettoyer_df(df)
+####Tokenisation
+def nettoyer_et_tokenizer(texte):
+    # 1. Mise en minuscules
+    texte = texte.lower()
+    
+    # 2. Suppression de la ponctuation
+    # On crée une table de traduction qui remplace la ponctuation par rien
+    ponctuation= str.maketrans('', '', string.punctuation)
+    texte_sans_ponct = texte.translate(ponctuation)
+    
+    # 3. Tokenisation par découpage sur les espaces
+    tokens = texte_sans_ponct.split()
+    
+    return tokens
+df['tokens']=df['description'].apply(nettoyer_et_tokenizer)
+df.keys()
+# Créer le vectorizer en supprimant les stop words français
+vectorizer = TfidfVectorizer(stop_words='english')
+
+# Appliquer directement sur la colonne 'description' (texte brut)
+X = vectorizer.fit_transform(df['description'].astype(str))  # astype(str) pour éviter erreurs si NaN
+
+# Pour voir les mots retenus (sans stop words)
+print(vectorizer.get_feature_names_out())
+####Embeding
+# 1. Fusionner 'name' et 'description' pour avoir plus de contexte
+df["text_final"] = df["description"].astype(str)
+
+# 2. Vectorisation avec TF-IDF
+vectorizer = TfidfVectorizer(stop_words="english")
+X = vectorizer.fit_transform(df["text_final"])
+
+# 3. Vérification
+#print("Forme de la matrice TF-IDF :", X.shape)
+print("Exemple de mots :", vectorizer.get_feature_names_out()[:20])
+vectorizer
+vectorizer.get_feature_names_out()
+pd.DataFrame(vectorizer.inverse_transform(X))
