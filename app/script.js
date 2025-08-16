@@ -80,7 +80,7 @@ function setupEventListeners() {
 
     // Page de suggestion
     if (suggestBtn) {
-        suggestBtn.addEventListener('click', handleSuggestion);
+        suggestBtn.addEventListener('click', () => handleSuggestion());
         if (bookDescriptionSuggest) {
             bookDescriptionSuggest.addEventListener('input', autoResizeTextarea);
         }
@@ -116,7 +116,7 @@ async function handlePrediction() {
 
     try {
         setLoadingState(true, 'predict');
-        hideResult(); // Appel de la fonction ajoutée
+        hideResult();
         const { category, confidenceScore } = await classifyBook(title, description);
         showResult(category, title, description, confidenceScore);
         askConfirmation(category);
@@ -224,40 +224,65 @@ function showResult(category, title, description, confidenceScore) {
 }
 
 /**
- * Gère la suggestion de livres.
+ * Gère la suggestion de livres en appelant l'API et en affichant les résultats.
  */
 async function handleSuggestion() {
     console.log('📋 Début de handleSuggestion');
     const description = bookDescriptionSuggest ? bookDescriptionSuggest.value.trim() : '';
-
-    if (!description || description.length < 10) {
-        showError('Veuillez saisir une description d\'au moins 10 caractères.');
+    if (!description) {
+        showError('Veuillez saisir une description.');
+        focusInput();
+        return;
+    }
+    if (description.length < 10) {
+        showError('La description doit contenir au moins 10 caractères.');
+        focusInput();
         return;
     }
 
     try {
         setLoadingState(true, 'suggest');
-        hideSuggestion();
         const { category, suggestedBooks } = await suggestBooks(description);
+        console.log('result de l\'API /suggest:', { data: suggestedBooks });
         showSuggestions(category, suggestedBooks, description);
     } catch (error) {
-        console.error('❌ Erreur:', error);
-        showError(`Une erreur est survenue: ${error.message}`);
+        console.error('Erreur dans handleSuggestion:', error);
+        if (suggestionCatalog) {
+            suggestionCatalog.innerHTML = `
+                <p class="text-red-500">Erreur lors de la récupération des suggestions : ${error.message}. Veuillez réessayer.</p>
+            `;
+            suggestionSection.classList.remove('hidden');
+        }
     } finally {
         setLoadingState(false, 'suggest');
     }
 }
 
 /**
- * Appelle l'API FastAPI pour suggérer des livres.
+ * Mélange aléatoirement un tableau (algorithme de Fisher-Yates).
+ * @param {Array} array - Le tableau à mélanger.
+ * @returns {Array} Le tableau mélangé.
+ */
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+/**
+ * Appelle l'API FastAPI pour suggérer des livres et prédire la catégorie.
  * @param {string} description - La description du livre.
- * @returns {Object} Objet contenant la catégorie et les livres suggérés.
+ * @returns {Object} Objet contenant la catégorie prédite et les livres suggérés.
  */
 async function suggestBooks(description) {
     const text = description.trim();
 
     try {
-        const response = await fetch('http://192.168.6.246:8000/suggest', {
+        // Étape 1 : Appeler l'API /predict pour obtenir la catégorie
+        const predictResponse = await fetch('http://192.168.6.246:8000/predict', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -265,77 +290,81 @@ async function suggestBooks(description) {
             body: JSON.stringify({ text })
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Erreur API /suggest: ${response.status} - ${errorText}`);
+        if (!predictResponse.ok) {
+            const errorText = await predictResponse.text();
+            console.error('Réponse API /predict non-OK:', predictResponse.status, errorText);
+            throw new Error(`Erreur API /predict: ${predictResponse.status} - ${errorText}`);
         }
 
-        const result = await response.json();
-        if (!result.category || !result.suggestedBooks) {
-            throw new Error('Réponse API invalide : missing category or suggestedBooks');
+        const predictResult = await predictResponse.json();
+        const category = predictResult.cluster;
+
+        // Étape 2 : Appeler l'API /suggest pour obtenir les livres
+        const suggestResponse = await fetch('http://192.168.6.246:8000/suggest', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text })
+        });
+
+        if (!suggestResponse.ok) {
+            const errorText = await suggestResponse.text();
+            console.error('Réponse API /suggest non-OK:', suggestResponse.status, errorText);
+            throw new Error(`Erreur API /suggest: ${suggestResponse.status} - ${errorText}`);
         }
+
+        const suggestResult = await suggestResponse.json();
+        console.log('Réponse API /suggest brute:', suggestResult);
+        if (!suggestResult.data || !Array.isArray(suggestResult.data)) {
+            console.error('Réponse API /suggest invalide:', suggestResult);
+            throw new Error('Réponse API invalide : champ "data" manquant ou incorrect');
+        }
+
+        // Étape 3 : Mélanger aléatoirement les livres
+        const shuffledBooks = shuffleArray(suggestResult.data);
+
+        // Étape 4 : Mapper les livres avec des placeholders pour url et image_url
         return {
-            category: result.category,
-            suggestedBooks: result.suggestedBooks
+            category: category,
+            suggestedBooks: shuffledBooks.map(book => ({
+                title: book.title,
+                description: book.description,
+                url: '#',
+                image_url: 'https://via.placeholder.com/150'
+            }))
         };
     } catch (error) {
         console.error('Erreur réseau ou API:', error);
-        throw new Error('Échec de la connexion à l\'API. Vérifiez votre réseau ou l\'URL.');
+        throw error;
     }
 }
 
 /**
- * Affiche les suggestions de livres sous forme de catalogue visuel.
- * @param {string} category - La catégorie déduite.
- * @param {string[]} books - Liste des titres de livres suggérés.
- * @param {string} description - La description analysée.
+ * Affiche les suggestions de livres sous forme de tableau.
+ * @param {string} category - La catégorie prédite.
+ * @param {Object[]} books - Liste des livres suggérés (avec titre, description, url, image_url).
+ * @param {string} description - La description analysée (non utilisée ici).
  */
 function showSuggestions(category, books, description) {
     if (!suggestionSection || !suggestionCatalog) return;
+
     const categoryEmojis = {
-        'Science-Fiction': '🚀', 'Romance': '💕', 'Thriller': '🔍', 'Fantasy': '🐉', 'Histoire': '📜',
+        'Science-Fiction': '🚀',
+        'Romance': '💕',
+        'Thriller': '🔍',
+        'Fantasy': '🐉',
+        'Histoire': '📜',
         'Littérature Générale': '📖'
     };
     const emoji = categoryEmojis[category] || '📚';
     const limitedBooks = books.slice(0, 3); // Limite à 3 livres
 
-    const bookDatabase = {
-        'Science-Fiction': [
-            { title: 'Dune', image: 'https://via.placeholder.com/150', url: 'https://example.com/dune' },
-            { title: 'Fondation', image: 'https://via.placeholder.com/150', url: 'https://example.com/fondation' },
-            { title: '2001: L\'Odyssée de l\'espace', image: 'https://via.placeholder.com/150', url: 'https://example.com/2001' }
-        ],
-        'Romance': [
-            { title: 'Orgueil et Préjugés', image: 'https://via.placeholder.com/150', url: 'https://example.com/orgueil' },
-            { title: 'Le Journal de Bridget Jones', image: 'https://via.placeholder.com/150', url: 'https://example.com/bridget' },
-            { title: 'Nuits Blanches', image: 'https://via.placeholder.com/150', url: 'https://example.com/nuits' }
-        ],
-        'Thriller': [
-            { title: 'Le Silence des Agneaux', image: 'https://via.placeholder.com/150', url: 'https://example.com/silence' },
-            { title: 'Millénium', image: 'https://via.placeholder.com/150', url: 'https://example.com/millenium' },
-            { title: 'Gone Girl', image: 'https://via.placeholder.com/150', url: 'https://example.com/gone' }
-        ],
-        'Fantasy': [
-            { title: 'Le Seigneur des Anneaux', image: 'https://via.placeholder.com/150', url: 'https://example.com/lotr' },
-            { title: 'Harry Potter', image: 'https://via.placeholder.com/150', url: 'https://example.com/harry' },
-            { title: 'Le Trône de Fer', image: 'https://via.placeholder.com/150', url: 'https://example.com/got' }
-        ],
-        'Histoire': [
-            { title: 'Sapiens', image: 'https://via.placeholder.com/150', url: 'https://example.com/sapiens' },
-            { title: 'Guerre et Paix', image: 'https://via.placeholder.com/150', url: 'https://example.com/guerre' },
-            { title: 'L\'Histoire de France', image: 'https://via.placeholder.com/150', url: 'https://example.com/histoire' }
-        ],
-        'Littérature Générale': [
-            { title: 'Cent Ans de Solitude', image: 'https://via.placeholder.com/150', url: 'https://example.com/centans' },
-            { title: 'Les Misérables', image: 'https://via.placeholder.com/150', url: 'https://example.com/miserables' },
-            { title: 'L\'Étranger', image: 'https://via.placeholder.com/150', url: 'https://example.com/etranger' }
-        ]
+    // Tronquer les descriptions longues pour l'affichage
+    const truncateDescription = (desc, maxLength = 200) => {
+        if (desc.length <= maxLength) return desc;
+        return desc.substring(0, maxLength) + '...';
     };
-
-    const booksWithDetails = limitedBooks.map(title => {
-        const book = bookDatabase[category].find(b => b.title === title) || { title, image: 'https://via.placeholder.com/150', url: '#' };
-        return book;
-    });
 
     suggestionCatalog.innerHTML = `
         <div class="flex items-center space-x-3 mb-3">
@@ -344,18 +373,28 @@ function showSuggestions(category, books, description) {
                 <h4 class="text-xl font-bold text-green-100">Catégorie : ${category}</h4>
             </div>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            ${booksWithDetails.map(book => `
-                <a href="${book.url}" target="_blank" class="book-shelf-item bg-white bg-opacity-10 rounded-lg p-2 shadow-md hover:shadow-lg transition-shadow duration-300">
-                    <img src="${book.image}" alt="${book.title}" class="w-full h-48 object-cover rounded-t-lg">
-                    <p class="text-center text-green-100 mt-2">${book.title}</p>
-                </a>
-            `).join('')}
+        <div class="overflow-x-auto">
+            <table class="w-full table-auto bg-white bg-opacity-10 backdrop-blur-md rounded-lg shadow-md">
+                <thead>
+                    <tr class="bg-blue-900 bg-opacity-20 text-blue-100">
+                        <th class="px-4 py-2 text-left text-sm font-semibold">Titre</th>
+                        <th class="px-4 py-2 text-left text-sm font-semibold">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${limitedBooks.map(book => `
+                        <tr class="border-t border-white border-opacity-10 hover:bg-blue-800 hover:bg-opacity-10 transition-colors">
+                            <td class="px-4 py-2 text-green-100 font-medium">${book.title}</td>
+                            <td class="px-4 py-2 text-green-200 text-sm">${truncateDescription(book.description)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
         </div>
-        ${limitedBooks.length < bookDatabase[category].length ? '<p class="text-green-200 text-xs mt-2">Et d\'autres...</p>' : ''}
+        ${limitedBooks.length < books.length ? '<p class="text-green-200 text-xs mt-2">Et d\'autres...</p>' : ''}
     `;
     suggestionSection.classList.remove('hidden');
-    console.log('✅ Catalogue affiché');
+    console.log('✅ Tableau de suggestions affiché');
 }
 
 /**
@@ -428,12 +467,7 @@ function updateSuggestions(type) {
     for (const [category, words] of Object.entries(keywords)) {
         if (words.some(word => text.includes(word))) suggestions.push(category);
     }
-    if (suggestions.length > 0) {
-        suggestionsDiv.innerHTML = suggestions.map(cat => `<div class="suggestion-item">${cat}</div>`).join('');
-        suggestionsDiv.classList.remove('hidden');
-    } else {
-        suggestionsDiv.classList.add('hidden');
-    }
+    
 }
 
 /**

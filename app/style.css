@@ -22,16 +22,7 @@ BIBLIO IA 2025 - STYLES PERSONNALISÉS
     box-sizing: border-box;
 }
 
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    line-height: 1.6;
-    background-color: #f0f8ff;
-    background-image: 
-        linear-gradient(45deg, rgba(59, 130, 246, 0.1) 25%, transparent 25%, transparent 75%, rgba(59, 130, 246, 0.1) 75%, rgba(59, 130, 246, 0.1)),
-        linear-gradient(45deg, rgba(59, 130, 246, 0.1) 25%, transparent 25%, transparent 75%, rgba(59, 130, 246, 0.1) 75%, rgba(59, 130, 246, 0.1));
-    background-size: 20px 20px;
-    background-position: 0 0, 10px 10px;
-}
+
 
 /*
 ========================================
